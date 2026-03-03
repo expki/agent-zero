@@ -10,7 +10,7 @@ from plugins.memory.tools.memory_load import DEFAULT_THRESHOLD as DEFAULT_MEMORY
 
 DATA_NAME_TASK = "_recall_memories_task"
 DATA_NAME_ITER = "_recall_memories_iter"
-SEARCH_TIMEOUT = 30
+SEARCH_TIMEOUT = 120
 
 
 class RecallMemories(Extension):

@@ -1,10 +1,13 @@
 from python.helpers.extension import Extension
 from agent import LoopData
 from plugins.memory.extensions.python.message_loop_prompts_after._50_recall_memories import DATA_NAME_TASK as DATA_NAME_TASK_MEMORIES, DATA_NAME_ITER as DATA_NAME_ITER_MEMORIES
-from python.helpers import plugins
+from python.helpers import plugins, errors
+from asyncio import CancelledError
+from time import monotonic
 
 class RecallWait(Extension):
     async def execute(self, loop_data: LoopData = LoopData(), **kwargs):
+        execute_started_at = monotonic()
 
         if not self.agent:
             return
@@ -27,4 +30,19 @@ class RecallWait(Extension):
                     return
 
             # otherwise await the task
-            await task
+            try:
+                await task
+            except (TimeoutError, CancelledError) as e:
+                elapsed = max(0.0, monotonic() - execute_started_at)
+
+                if isinstance(e, TimeoutError):
+                    content = errors.format_error(e)
+                else:
+                    content = "CancelledError: memory recall task was cancelled."
+                content = f"{content}\nElapsed RecallWait.execute time before timeout: {elapsed:.2f}s"
+
+                self.agent.context.log.log(
+                    type="warning",
+                    heading="Memory recall timed out",
+                    content=content,
+                )
